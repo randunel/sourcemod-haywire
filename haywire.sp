@@ -39,7 +39,7 @@ HookGeneric() {
 }
 
 HookCSGO() {
-    LogAction(-1, -1, "Should hook CSGO events");
+    LogAction(0, -1, "Should hook CSGO events");
 }
 
 /**
@@ -66,7 +66,7 @@ public Action:Handle_player_connect(Handle:event, const String:name[], bool: don
     new String:address[MAX_IP_LENGTH];
     GetEventString(event, "address", address, sizeof(address));
     new bot = GetEventBool(event, "bot");
-    LogAction(uId, -1, "HW->player_connect->[%L],[%L],[%L],[%L],[%L],[%L]", pName, index, uId, nId, address, bot);
+    LogToGame("HW->player_connect->[%s],[%d],[%d],[%s],[%s],[%b]", pName, index, uId, nId, address, bot);
     return Plugin_Handled;
 }
 
