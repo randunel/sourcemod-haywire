@@ -1,3 +1,4 @@
 *.swp
+.haywire.sp.swp
 spcomp
 plugins/
