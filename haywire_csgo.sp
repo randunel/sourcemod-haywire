@@ -73,35 +73,40 @@ HookEvents() {
     HookEvent("exit_bombzone", Handle_exit_bombzone);
     HookEvent("silencer_off", HandleSimpleUserid);
     HookEvent("silencer_on", HandleSimpleUserid);
-    /*HookEvent("round_prestart", Handle_round_prestart);
-    HookEvent("round_poststart", Handle_round_poststart);
+    HookEvent("round_prestart", HandleSimpleEvent);
+    HookEvent("round_poststart", HandleSimpleEvent);
     HookEvent("round_start", Handle_round_start);
     HookEvent("round_end", Handle_round_end); // ok when bomb explodes
-    HookEvent("grenade_bounce", Handle_grenade_bounce);
-    HookEvent("hegrenade_detonate", Handle_hegrenade_detonate);
-    HookEvent("flashbang_detonate", Handle_flashbang_detonate);
-    HookEvent("smokegrenade_detonate", Handle_smokegrenade_detonate);
-    HookEvent("smokegrenade_expired", Handle_smokegrenade_expired);
-    HookEvent("molotov_detonate", Handle_molotov_detonate);
-    HookEvent("decoy_detonate", Handle_decoy_detonate);
-    HookEvent("decoy_started", Handle_decoy_started);
-    HookEvent("inferno_startburn", Handle_inferno_startburn);
-    HookEvent("inferno_expire", Handle_inferno_expire);
-    HookEvent("inferno_extinguish", Handle_inferno_extinguish);
-    HookEvent("decoy_firing", Handle_decoy_firing);
+    HookEvent("grenade_bounce", HandleSimpleUserid);
+    HookEvent("hegrenade_detonate", HandleUserEntity);
+    HookEvent("flashbang_detonate", HandleUserEntity);
+    HookEvent("smokegrenade_detonate", HandleUserEntity);
+    HookEvent("smokegrenade_expired", HandleUserEntity);
+    HookEvent("molotov_detonate", HandleUserEntity); // TEST, it may need custom handler
+    HookEvent("decoy_detonate", HandleUserEntity);
+    HookEvent("decoy_started", HandleUserEntity);
+    HookEvent("inferno_startburn", HandleSimpleEntity);
+    HookEvent("inferno_expire", HandleSimpleEntity);
+    HookEvent("inferno_extinguish", HandleSimpleEntity);
+    HookEvent("decoy_firing", HandleUserEntity);
     HookEvent("bullet_impact", Handle_bullet_impact);
-    HookEvent("player_footstep", Handle_player_footstep);
-    HookEvent("player_blind", Handle_player_blind);
+    HookEvent("player_footstep", HandleSimpleUserid);
+    HookEvent("player_jump", HandleSimpleUserid);
+    HookEvent("player_blind", HandleSimpleUserid);
     HookEvent("player_falldamage", Handle_player_falldamage);
     HookEvent("door_moving", Handle_door_moving);
-    HookEvent("round_freeze_end", Handle_round_freeze_end);
-    HookEvent("mb_input_lock_success", Handle_mb_input_lock_success);
-    HookEvent("mb_input_lock_cancel", Handle_mb_input_lock_cancel);
+    HookEvent("round_freeze_end", HandleSimpleEvent);
+    HookEvent("mb_input_lock_success", HandleSimpleEvent);
+    HookEvent("mb_input_lock_cancel", HandleSimpleEvent);
+    HookEvent("cs_win_panel_round", Handle_cs_win_panel_round);
+    HookEvent("cs_win_panel_match", Handle_cs_win_panel_match);
+    HookEvent("cs_match_end_restart", HandleSimpleEvent);
+    HookEvent("cs_pre_restart", HandleSimpleEvent);
+    HookEvent("match_end_conditions", Handle_match_end_conditions);
     HookEvent("round_mvp", Handle_round_mvp);
     HookEvent("switch_team", Handle_switch_team);
-    HookEvent("player_given_c4", Handle_player_given_c4);
+    HookEvent("player_given_c4", HandleSimpleUserid);
     HookEvent("bot_takeover", Handle_bot_takeover);
-*/
 }
 
 /**
@@ -123,6 +128,37 @@ public Action:HandleSimpleUserid(Handle:event, const String:eventName[], bool:do
     GetClientAbsOrigin(player, Float:playerCoords);
     LogToGame("HW->%s->[%d],[%f],[%f],[%f]", eventName, player, playerCoords[0], playerCoords[1], playerCoords[2]);
     return Plugin_Handled;
+}
+
+public Action:HandleSimpleEntity(Handle:event, const String:eventName[], bool:dontBroadcast) {
+    LogToGame("HW->%s->[%d],[%f],[%f],[%f]",
+        GetEventInt(event, "entityid"),
+        GetEventFloat(event, "x"),
+        GetEventFloat(event, "y"),
+        GetEventFloat(event, "z")
+    );
+    return Plugin_Handled
+}
+
+public Action:HandleUserEntity(Handle:event, const String:eventName[], bool:dontBroadcast) {
+    new player = GetEventInt(event, "userid");
+    new entity = GetEventInt(event, "entityid");
+
+    new Float:playerCoords[3];
+    GetClientAbsOrigin(player, Float:playerCoords);
+
+    LogToGame("HW->%s->[%d],[%f],[%f],[%f],[%d],[%f],[%f],[%f]",
+        eventName,
+        player,
+        playerCoords[0],
+        playerCoords[1],
+        playerCoords[2],
+        entity,
+        GetEventFloat(event, "x"),
+        GetEventFloat(event, "y"),
+        GetEventFloat(event, "z")
+    );
+    return Plugin_Handled
 }
 
 // This section is from https://wiki.alliedmods.net/Generic_Source_Server_Events
@@ -230,17 +266,6 @@ public Action:Handle_game_start(Handle:event, const String:eventName[], bool:don
 public Action:Handle_game_end(Handle:event, const String:eventName[], bool:dontBroadcast) {
     LogToGame("HW->game_end->[%d]",
         GetEventInt(event, "winner")
-    );
-    return Plugin_Handled;
-}
-
-public Action:Handle_round_end(Handle:event, const String:eventName[], bool:dontBroadcast) {
-    new String:message[MAX_MESSAGE_LENGTH];
-    GetEventString(event, "message", message, sizeof(message));
-    LogToGame("HW->round_end->[%d],[%d],[%s]",
-        GetEventInt(event, "winner"),
-        GetEventInt(event, "reason"),
-        message
     );
     return Plugin_Handled;
 }
@@ -718,36 +743,152 @@ public Action:Handle_exit_bombzone(Handle:event, const String:eventName[], bool:
     return Plugin_Handled;
 }
 
+public Action:Handle_round_start(Handle:event, const String:eventName[], bool:dontBroadcast) {
+    new String:objective[MAX_NAME_LENGTH];
+    GetEventString(event, "objective", objective, sizeof(objective));
 
-/*
-    HookEvent("silencer_off", Handle_silencer_off);
-    HookEvent("silencer_on", Handle_silencer_on);
-    HookEvent("round_prestart", Handle_round_prestart);
-    HookEvent("round_poststart", Handle_round_poststart);
-    HookEvent("round_start", Handle_round_start);
-    HookEvent("round_end", Handle_round_end); // ok when bomb explodes
-    HookEvent("grenade_bounce", Handle_grenade_bounce);
-    HookEvent("hegrenade_detonate", Handle_hegrenade_detonate);
-    HookEvent("flashbang_detonate", Handle_flashbang_detonate);
-    HookEvent("smokegrenade_detonate", Handle_smokegrenade_detonate);
-    HookEvent("smokegrenade_expired", Handle_smokegrenade_expired);
-    HookEvent("molotov_detonate", Handle_molotov_detonate);
-    HookEvent("decoy_detonate", Handle_decoy_detonate);
-    HookEvent("decoy_started", Handle_decoy_started);
-    HookEvent("inferno_startburn", Handle_inferno_startburn);
-    HookEvent("inferno_expire", Handle_inferno_expire);
-    HookEvent("inferno_extinguish", Handle_inferno_extinguish);
-    HookEvent("decoy_firing", Handle_decoy_firing);
-    HookEvent("bullet_impact", Handle_bullet_impact);
-    HookEvent("player_footstep", Handle_player_footstep);
-    HookEvent("player_blind", Handle_player_blind);
-    HookEvent("player_falldamage", Handle_player_falldamage);
-    HookEvent("door_moving", Handle_door_moving);
-    HookEvent("round_freeze_end", Handle_round_freeze_end);
-    HookEvent("mb_input_lock_success", Handle_mb_input_lock_success);
-    HookEvent("mb_input_lock_cancel", Handle_mb_input_lock_cancel);
-    HookEvent("round_mvp", Handle_round_mvp);
-    HookEvent("switch_team", Handle_switch_team);
-    HookEvent("player_given_c4", Handle_player_given_c4);
-    HookEvent("bot_takeover", Handle_bot_takeover);
-*/
+    LogToGame("HW->round_start->[%f],[%f],[%s]",
+        GetEventFloat(event, "timelimit"),
+        GetEventFloat(event, "fraglimit"),
+        objective
+    );
+    return Plugin_Handled;
+}
+
+public Action:Handle_round_end(Handle:event, const String:eventName[], bool:dontBroadcast) {
+    new String:message[MAX_MESSAGE_LENGTH];
+    GetEventString(event, "message", message, sizeof(message));
+
+    LogToGame("HW->round_end->[%f],[%f],[%s]",
+        GetEventFloat(event, "winner"),
+        GetEventFloat(event, "reason"),
+        message
+    );
+    return Plugin_Handled;
+}
+
+public Action:Handle_bullet_impact(Handle:event, const String:eventName[], bool:dontBroadcast) {
+    new player = GetEventInt(event, "userid");
+
+    new Float:playerCoords[3];
+    GetClientAbsOrigin(player, Float:playerCoords);
+
+    LogToGame("HW->bullet_impact->[%d],[%f],[%f],[%f],[%f],[%f],[%f]",
+        player,
+        playerCoords[0],
+        playerCoords[1],
+        playerCoords[2],
+        GetEventFloat(event, "x"),
+        GetEventFloat(event, "y"),
+        GetEventFloat(event, "z")
+    );
+    return Plugin_Handled;
+}
+
+public Action:Handle_player_falldamage(Handle:event, const String:eventName[], bool:dontBroadcast) {
+    new player = GetEventInt(event, "userid");
+
+    new Float:playerCoords[3];
+    GetClientAbsOrigin(player, Float:playerCoords);
+
+    LogToGame("HW->player_falldamage->[%d],[%f],[%f],[%f],[%f]",
+        player,
+        playerCoords[0],
+        playerCoords[1],
+        playerCoords[2],
+        GetEventFloat(event, "damage")
+    );
+    return Plugin_Handled;
+}
+
+public Action:Handle_door_moving(Handle:event, const String:eventName[], bool:dontBroadcast) {
+    new player = GetEventInt(event, "userid");
+    new entity = GetEventInt(event, "entindex");
+
+    new Float:playerCoords[3];
+    GetClientAbsOrigin(player, Float:playerCoords);
+    new Float:entityCoords[3];
+    GetEntPropVector(entity, Prop_Data, "m_vecOrigin", Float:entityCoords);
+
+    LogToGame("HW->door_moving->[%d],[%f],[%f],[%f],[%d],[%f],[%f],[%f]",
+        player,
+        playerCoords[0],
+        playerCoords[1],
+        playerCoords[2],
+        entity,
+        entityCoords[0],
+        entityCoords[1],
+        entityCoords[2]
+    );
+    return Plugin_Handled;
+}
+
+public Action:Handle_cs_win_panel_round(Handle:event, const String:eventName[], bool:dontBroadcast) {
+    new String:token[MAX_MESSAGE_LENGTH];
+    GetEventString(event, "token", token, sizeof(token));
+    LogToGame("HW->cs_win_panel_round->[%d],[%d],[%d],[%d],[%s],[%d],[%f],[%f],[%f]",
+        GetEventBool(event, "show_timer_defend"),
+        GetEventBool(event, "show_timer_attack"),
+        GetEventInt(event, "timer_time"),
+        GetEventInt(event, "final_event"),
+        token,
+        GetEventInt(event, "funfact_player"),
+        GetEventFloat(event, "funfact_data1"),
+        GetEventFloat(event, "funfact_data2"),
+        GetEventFloat(event, "funfact_data3")
+    );
+    return Plugin_Handled;
+}
+
+public Action:Handle_cs_win_panel_match(Handle:event, const String:eventName[], bool:dontBroadcast) {
+    LogToGame("HW->cs_win_panel_match->[%d],[%d],[%f],[%f],[%d],[%d],[%f],[%f]",
+        GetEventInt(event, "t_score"),
+        GetEventInt(event, "ct_score"),
+        GetEventFloat(event, "t_kd"),
+        GetEventFloat(event, "ct_kd"),
+        GetEventInt(event, "t_objectives_done"),
+        GetEventInt(event, "ct_objectives_done"),
+        GetEventFloat(event, "t_money_earned"),
+        GetEventFloat(event, "ct_money_earned")
+    );
+    return Plugin_Handled;
+}
+
+public Action:Handle_match_end_conditions(Handle:event, const String:eventName[], bool:dontBroadcast) {
+    LogToGame("HW->match_end_conditions->[%f],[%f],[%f],[%f]",
+        GetEventFloat(event, "frags"),
+        GetEventFloat(event, "max_rounds"),
+        GetEventFloat(event, "win_rounds"),
+        GetEventFloat(event, "time")
+    );
+    return Plugin_Handled;
+}
+
+public Action:Handle_round_mvp(Handle:event, const String:eventName[], bool:dontBroadcast) {
+    LogToGame("HW->round_mvp->[%d],[%d]",
+        GetEventInt(event, "userid"),
+        GetEventInt(event, "reason")
+    );
+    return Plugin_Handled;
+}
+
+public Action:Handle_switch_team(Handle:event, const String:eventName[], bool:dontBroadcast) {
+    LogToGame("HW->switch_team->[%d],[%d],[%d],[%d],[%d]",
+        GetEventInt(event, "numPlayers"),
+        GetEventInt(event, "numSpectators"),
+        GetEventInt(event, "avg_rank"),
+        GetEventInt(event, "numTSlotsFree"),
+        GetEventInt(event, "numCTSlotsFree")
+    );
+    return Plugin_Handled;
+}
+
+public Action:Handle_bot_takeover(Handle:event, const String:eventName[], bool:dontBroadcast) {
+    LogToGame("HW->bot_takeover->[%d],[%d],[%d]",
+        GetEventInt(event, "userid"),
+        GetEventInt(event, "botid"),
+        GetEventInt(event, "index")
+    );
+    return Plugin_Handled;
+}
+
