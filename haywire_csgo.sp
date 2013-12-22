@@ -29,7 +29,7 @@ HookEvents() {
     HookEvent("player_connect", Handle_player_connect); // ok
     HookEvent("player_info", Handle_player_info); // TEST
     HookEvent("player_disconnect", Handle_player_disconnect); // ok
-    HookEvent("player_activate", Handle_player_activate); // ok
+    HookEvent("player_activate", HandleSimpleUserid); // ok
     HookEvent("player_say", Handle_player_say); // ok
     // This section is from https://wiki.alliedmods.net/Generic_Source_Events
     HookEvent("player_team", Handle_player_team); // ok
@@ -126,7 +126,7 @@ public Action:HandleSimpleUserid(Handle:event, const String:eventName[], bool:do
     GetClientEyeAngles(player, Float:playerAngles);
     LogToGame("HW->%s->[%d],[%f],[%f],[%f],[%f],[%f],[%f]",
         eventName,
-        player,
+        GetEventInt(event, "userid"),
         playerCoords[0],
         playerCoords[1],
         playerCoords[2],
@@ -158,7 +158,7 @@ public Action:HandleUserEntity(Handle:event, const String:eventName[], bool:dont
 
     LogToGame("HW->%s->[%d],[%f],[%f],[%f],[%f],[%f],[%f],[%d],[%f],[%f],[%f]",
         eventName,
-        player,
+        GetEventInt(event, "userid"),
         playerCoords[0],
         playerCoords[1],
         playerCoords[2],
@@ -196,7 +196,7 @@ public Action:Handle_player_connect(Handle:event, const String:eventName[], bool
     GetEventString(event, "address", address, sizeof(address));
     LogToGame("HW->player_connect->[%d],[%d],[%s],[%s],[%b],[%s",
         GetEventInt(event, "index"),
-        GetClientOfUserId(GetEventInt(event, "userid")),
+        GetEventInt(event, "userid"),
         sId, // BOT for bots
         address, // [none] for bots
         GetEventBool(event, "bot"), // 1 / 0
@@ -213,7 +213,7 @@ public Action:Handle_player_info(Handle:event, const String:eventName[], bool:do
     LogToGame("HW->player_info->[%s],[%d],[%d],[%s],[%b]",
         pName,
         GetEventInt(event, "index"),
-        GetClientOfUserId(GetEventInt(event, "userid")),
+        GetEventInt(event, "userid"),
         sId,
         GetEventBool(event, "bot")
     );
@@ -226,7 +226,7 @@ public Action:Handle_player_disconnect(Handle:event, const String:eventName[], b
     new String:sId[MAX_STEAMID_LENGTH];
     GetEventString(event, "networkid", sId, sizeof(sId));
     LogToGame("HW->player_disconnect->[%d],[%s],[%s],[%d]",
-        GetClientOfUserId(GetEventInt(event, "userid")),
+        GetEventInt(event, "userid"),
         reason,
         sId,
         GetEventInt(event, "bot")
@@ -234,18 +234,23 @@ public Action:Handle_player_disconnect(Handle:event, const String:eventName[], b
     return Plugin_Handled;
 }
 
-public Action:Handle_player_activate(Handle:event, const String:eventName[], bool:dontBroadcast) {
-    LogToGame("HW->player_activate->[%d]",
-        GetClientOfUserId(GetEventInt(event, "userid"))
-    );
-    return Plugin_Handled;
-}
-
 public Action:Handle_player_say(Handle:event, const String:eventName[], bool:dontBroadcast) {
+    new player = GetClientOfUserId(GetEventInt(event, "userid"));
+
+    new Float:playerCoords[3];
+    GetClientAbsOrigin(player, Float:playerCoords);
+    new Float:playerAngles[3];
+    GetClientEyeAngles(player, Float:playerAngles);
     new String:message[MAX_MESSAGE_LENGTH];
     GetEventString(event, "text", message, sizeof(message));
-    LogToGame("HW->player_say->[%d],[%s]",
-        GetClientOfUserId(GetEventInt(event, "userid")),
+    LogToGame("HW->player_say->[%d],[%f],[%f],[%f],[%f],[%f],[%f],[%s]",
+        GetEventInt(event, "userid"),
+        playerCoords[0],
+        playerCoords[1],
+        playerCoords[2],
+        playerAngles[0],
+        playerAngles[1],
+        playerAngles[2],
         message
     );
     return Plugin_Handled;
@@ -253,7 +258,7 @@ public Action:Handle_player_say(Handle:event, const String:eventName[], bool:don
 
 public Action:Handle_player_team(Handle:event, const String:eventName[], bool:dontBroadcast) {
     LogToGame("HW->player_team->[%d],[%d],[%d],[%d]",
-        GetClientOfUserId(GetEventInt(event, "userid")),
+        GetEventInt(event, "userid"),
         GetEventInt(event, "team"),
         GetEventInt(event, "oldteam"),
         GetEventBool(event, "disconnect")
@@ -280,18 +285,42 @@ public Action:Handle_game_end(Handle:event, const String:eventName[], bool:dontB
 }
 
 public Action:Handle_break_breakable(Handle:event, const String:eventName[], bool:dontBroadcast) {
-    LogToGame("HW->break_breakable->[%d],[%d],[%d]",
+    new player = GetClientOfUserId(GetEventInt(event, "userid"));
+
+    new Float:playerCoords[3];
+    GetClientAbsOrigin(player, Float:playerCoords);
+    new Float:playerAngles[3];
+    GetClientEyeAngles(player, Float:playerAngles);
+    LogToGame("HW->break_breakable->[%d],[%d],[%f],[%f],[%f],[%f],[%f],[%f],[%d]",
         GetEventInt(event, "entindex"),
-        GetClientOfUserId(GetEventInt(event, "userid")),
+        GetEventInt(event, "userid"),
+        playerCoords[0],
+        playerCoords[1],
+        playerCoords[2],
+        playerAngles[0],
+        playerAngles[1],
+        playerAngles[2],
         GetEventInt(event, "material")
     );
     return Plugin_Handled;
 }
 
 public Action:Handle_break_prop(Handle:event, const String:eventName[], bool:dontBroadcast) {
-    LogToGame("HW->break_prop->[%d],[%d]",
+    new player = GetClientOfUserId(GetEventInt(event, "userid"));
+
+    new Float:playerCoords[3];
+    GetClientAbsOrigin(player, Float:playerCoords);
+    new Float:playerAngles[3];
+    GetClientEyeAngles(player, Float:playerAngles);
+    LogToGame("HW->break_prop->[%d],[%d],[%f],[%f],[%f],[%f],[%f],[%f]",
         GetEventInt(event, "entindex"),
-        GetClientOfUserId(GetEventInt(event, "userid"))
+        GetEventInt(event, "userid"),
+        playerCoords[0],
+        playerCoords[1],
+        playerCoords[2],
+        playerAngles[0],
+        playerAngles[1],
+        playerAngles[2]
     );
     return Plugin_Handled;
 }
@@ -300,36 +329,39 @@ public Action:Handle_break_prop(Handle:event, const String:eventName[], bool:don
 
 public Action:Handle_player_death(Handle:event, const String:eventName[], bool:dontBroadcast) {
     new victim = GetClientOfUserId(GetEventInt(event, "userid"));
-    new killer = GetClientOfUserId(GetEventInt(event, "attacker"));
+    new attacker = GetClientOfUserId(GetEventInt(event, "attacker"));
+    if(attacker == 0) {
+        return Plugin_Handled;
+    }
 
     new Float:victimCoords[3];
     GetClientAbsOrigin(victim, Float:victimCoords);
     new Float:victimAngles[3];
     GetClientEyeAngles(victim, Float:victimAngles);
 
-    new Float:killerCoords[3];
-    GetClientAbsOrigin(killer, Float:killerCoords);
-    new Float:killerAngles[3];
-    GetClientEyeAngles(killer, Float:killerAngles);
+    new Float:attackerCoords[3];
+    GetClientAbsOrigin(attacker, Float:attackerCoords);
+    new Float:attackerAngles[3];
+    GetClientEyeAngles(attacker, Float:attackerAngles);
 
     new String:weapon[MAX_NAME_LENGTH];
     GetEventString(event, "weapon", weapon, sizeof(weapon));
 
     LogToGame("HW->player_death->[%d],[%f],[%f],[%f],[%f],[%f],[%f],[%d],[%f],[%f],[%f],[%f],[%f],[%f],[%d],[%s],[%d],[%d],[%d],[%d]",
-        victim,
+        GetEventInt(event, "userid"),
         victimCoords[0],
         victimCoords[1],
         victimCoords[2],
         victimAngles[0],
         victimAngles[1],
         victimAngles[2],
-        killer,
-        killerCoords[0],
-        killerCoords[1],
-        killerCoords[2],
-        killerAngles[0],
-        killerAngles[1],
-        killerAngles[2],
+        GetEventInt(event, "attacker"),
+        attackerCoords[0],
+        attackerCoords[1],
+        attackerCoords[2],
+        attackerAngles[0],
+        attackerAngles[1],
+        attackerAngles[2],
         GetEventInt(event, "assister"),
         weapon,
         GetEventBool(event, "headshot"),
@@ -361,14 +393,14 @@ public Action:Handle_player_hurt(Handle:event, const String:eventName[], bool:do
     GetEventString(event, "weapon", weapon, sizeof(weapon));
 
     LogToGame("HW->player_hurt->[%d],[%f],[%f],[%f],[%f],[%f],[%f],[%d],[%f],[%f],[%f],[%f],[%f],[%f],[%d],[%d],[%s],[%d],[%d],[%d]",
-        victim,
+        GetEventInt(event, "userid"),
         victimCoords[0],
         victimCoords[1],
         victimCoords[2],
         victimAngles[0],
         victimAngles[1],
         victimAngles[2],
-        attacker,
+        GetEventInt(event, "attacker"),
         attackerCoords[0],
         attackerCoords[1],
         attackerCoords[2],
@@ -397,7 +429,7 @@ public Action:Handle_item_purchase(Handle:event, const String:eventName[], bool:
     GetEventString(event, "weapon", weapon, sizeof(weapon));
 
     LogToGame("HW->item_purchase->[%d],[%f],[%f],[%f],[%f],[%f],[%f],[%d],[%s]",
-        player,
+        GetEventInt(event, "userid"),
         playerCoords[0],
         playerCoords[1],
         playerCoords[2],
@@ -419,7 +451,7 @@ public Action:Handle_bomb_beginplant(Handle:event, const String:eventName[], boo
     GetClientEyeAngles(player, Float:playerAngles);
 
     LogToGame("HW->bomb_beginplant->[%d],[%f],[%f],[%f],[%f],[%f],[%f],[%d]",
-        player,
+        GetEventInt(event, "userid"),
         playerCoords[0],
         playerCoords[1],
         playerCoords[2],
@@ -440,7 +472,7 @@ public Action:Handle_bomb_abortplant(Handle:event, const String:eventName[], boo
     GetClientEyeAngles(player, Float:playerAngles);
 
     LogToGame("HW->bomb_abortplant->[%d],[%f],[%f],[%f],[%f],[%f],[%f],[%d]",
-        player,
+        GetEventInt(event, "userid"),
         playerCoords[0],
         playerCoords[1],
         playerCoords[2],
@@ -461,7 +493,7 @@ public Action:Handle_bomb_planted(Handle:event, const String:eventName[], bool:d
     GetClientEyeAngles(player, Float:playerAngles);
 
     LogToGame("HW->bomb_planted->[%d],[%f],[%f],[%f],[%f],[%f],[%f],[%d]",
-        player,
+        GetEventInt(event, "userid"),
         playerCoords[0],
         playerCoords[1],
         playerCoords[2],
@@ -482,7 +514,7 @@ public Action:Handle_bomb_defused(Handle:event, const String:eventName[], bool:d
     GetClientEyeAngles(player, Float:playerAngles);
 
     LogToGame("HW->bomb_defused->[%d],[%f],[%f],[%f],[%f],[%f],[%f],[%d]",
-        player,
+        GetEventInt(event, "userid"),
         playerCoords[0],
         playerCoords[1],
         playerCoords[2],
@@ -496,7 +528,7 @@ public Action:Handle_bomb_defused(Handle:event, const String:eventName[], bool:d
 
 public Action:Handle_bomb_exploded(Handle:event, const String:eventName[], bool:dontBroadcast) {
     LogToGame("HW->bomb_exploded->[%d],[%d]",
-        GetClientOfUserId(GetEventInt(event, "userid")),
+        GetEventInt(event, "userid"),
         GetEventInt(event, "site")
     );
     return Plugin_Handled;
@@ -516,7 +548,7 @@ public Action:Handle_bomb_dropped(Handle:event, const String:eventName[], bool:d
     GetEntPropVector(entity, /*Prop_Send*/ Prop_Data, "m_vecOrigin", Float:entityCoords);
 
     LogToGame("HW->bomb_dropped->[%d],[%f],[%f],[%f],[%f],[%f],[%f],[%d],[%f],[%f],[%f]",
-        player,
+        GetEventInt(event, "userid"),
         playerCoords[0],
         playerCoords[1],
         playerCoords[2],
@@ -555,7 +587,7 @@ public Action:Handle_defuser_pickup(Handle:event, const String:eventName[], bool
     GetClientEyeAngles(player, Float:playerAngles);
 
     LogToGame("HW->defuser_pickup->[%d],[%f],[%f],[%f],[%f],[%f],[%f],[%f]",
-        player,
+        GetEventInt(event, "userid"),
         playerCoords[0],
         playerCoords[1],
         playerCoords[2],
@@ -576,7 +608,7 @@ public Action:Handle_bomb_begindefuse(Handle:event, const String:eventName[], bo
     GetClientEyeAngles(player, Float:playerAngles);
 
     LogToGame("HW->bomb_begindefuse->[%d],[%f],[%f],[%f],[%f],[%f],[%f],[%d]",
-        player,
+        GetEventInt(event, "userid"),
         playerCoords[0],
         playerCoords[1],
         playerCoords[2],
@@ -597,7 +629,7 @@ public Action:Handle_bomb_abortdefuse(Handle:event, const String:eventName[], bo
     GetClientEyeAngles(player, Float:playerAngles);
 
     LogToGame("HW->bomb_abortdefuse->[%d],[%f],[%f],[%f],[%f],[%f],[%f]",
-        player,
+        GetEventInt(event, "userid"),
         playerCoords[0],
         playerCoords[1],
         playerCoords[2],
@@ -617,7 +649,7 @@ public Action:Handle_player_radio(Handle:event, const String:eventName[], bool:d
     GetClientEyeAngles(player, Float:playerAngles);
 
     LogToGame("HW->player_radio->[%d],[%f],[%f],[%f],[%f],[%f],[%f],[%d]",
-        player,
+        GetEventInt(event, "userid"),
         playerCoords[0],
         playerCoords[1],
         playerCoords[2],
@@ -656,7 +688,7 @@ public Action:Handle_weapon_fire(Handle:event, const String:eventName[], bool:do
     GetEventString(event, "weapon", weapon, sizeof(weapon));
 
     LogToGame("HW->weapon_fire->[%d],[%f],[%f],[%f],[%f],[%f],[%f],[%s],[%d]",
-        player,
+        GetEventInt(event, "userid"),
         playerCoords[0],
         playerCoords[1],
         playerCoords[2],
@@ -681,7 +713,7 @@ public Action:Handle_weapon_fire_on_empty(Handle:event, const String:eventName[]
     GetEventString(event, "weapon", weapon, sizeof(weapon));
 
     LogToGame("HW->weapon_fire_on_empty->[%d],[%f],[%f],[%f],[%f],[%f],[%f],[%s]",
-        player,
+        GetEventInt(event, "userid"),
         playerCoords[0],
         playerCoords[1],
         playerCoords[2],
@@ -705,7 +737,7 @@ public Action:Handle_item_pickup(Handle:event, const String:eventName[], bool:do
     GetEventString(event, "item", item, sizeof(item));
 
     LogToGame("HW->item_pickup->[%d],[%f],[%f],[%f],[%f],[%f],[%f],[%s]",
-        player,
+        GetEventInt(event, "userid"),
         playerCoords[0],
         playerCoords[1],
         playerCoords[2],
@@ -729,7 +761,7 @@ public Action:Handle_ammo_pickup(Handle:event, const String:eventName[], bool:do
     GetEventString(event, "item", item, sizeof(item));
 
     LogToGame("HW->ammo_pickup->[%d],[%f],[%f],[%f],[%f],[%f],[%f],[%s],[%f]",
-        player,
+        GetEventInt(event, "userid"),
         playerCoords[0],
         playerCoords[1],
         playerCoords[2],
@@ -754,7 +786,7 @@ public Action:Handle_item_equip(Handle:event, const String:eventName[], bool:don
     GetEventString(event, "item", item, sizeof(item));
 
     LogToGame("HW->item_equip->[%d],[%f],[%f],[%f],[%f],[%f],[%f],[%s],[%d],[%d],[%d],[%d],[%d]",
-        player,
+        GetEventInt(event, "userid"),
         playerCoords[0],
         playerCoords[1],
         playerCoords[2],
@@ -780,7 +812,7 @@ public Action:Handle_enter_buyzone(Handle:event, const String:eventName[], bool:
     GetClientEyeAngles(player, Float:playerAngles);
 
     LogToGame("HW->enter_buyzone->[%d],[%f],[%f],[%f],[%f],[%f],[%f],[%d]",
-        player,
+        GetEventInt(event, "userid"),
         playerCoords[0],
         playerCoords[1],
         playerCoords[2],
@@ -801,7 +833,7 @@ public Action:Handle_exit_buyzone(Handle:event, const String:eventName[], bool:d
     GetClientEyeAngles(player, Float:playerAngles);
 
     LogToGame("HW->exit_buyzone->[%d],[%f],[%f],[%f],[%f],[%f],[%f],[%d]",
-        player,
+        GetEventInt(event, "userid"),
         playerCoords[0],
         playerCoords[1],
         playerCoords[2],
@@ -822,7 +854,7 @@ public Action:Handle_enter_bombzone(Handle:event, const String:eventName[], bool
     GetClientEyeAngles(player, Float:playerAngles);
 
     LogToGame("HW->enter_bombzone->[%d],[%f],[%f],[%f],[%f],[%f],[%f],[%d],[%d]",
-        player,
+        GetEventInt(event, "userid"),
         playerCoords[0],
         playerCoords[1],
         playerCoords[2],
@@ -844,7 +876,7 @@ public Action:Handle_exit_bombzone(Handle:event, const String:eventName[], bool:
     GetClientEyeAngles(player, Float:playerAngles);
 
     LogToGame("HW->exit_bombzone->[%d],[%f],[%f],[%f],[%f],[%f],[%f],[%d],[%d]",
-        player,
+        GetEventInt(event, "userid"),
         playerCoords[0],
         playerCoords[1],
         playerCoords[2],
@@ -890,7 +922,7 @@ public Action:Handle_bullet_impact(Handle:event, const String:eventName[], bool:
     GetClientEyeAngles(player, Float:playerAngles);
 
     LogToGame("HW->bullet_impact->[%d],[%f],[%f],[%f],[%f],[%f],[%f],[%f],[%f],[%f]",
-        player,
+        GetEventInt(event, "userid"),
         playerCoords[0],
         playerCoords[1],
         playerCoords[2],
@@ -913,7 +945,7 @@ public Action:Handle_player_falldamage(Handle:event, const String:eventName[], b
     GetClientEyeAngles(player, Float:playerAngles);
 
     LogToGame("HW->player_falldamage->[%d],[%f],[%f],[%f],[%f],[%f],[%f],[%f]",
-        player,
+        GetEventInt(event, "userid"),
         playerCoords[0],
         playerCoords[1],
         playerCoords[2],
@@ -937,7 +969,7 @@ public Action:Handle_door_moving(Handle:event, const String:eventName[], bool:do
     GetEntPropVector(entity, Prop_Data, "m_vecOrigin", Float:entityCoords);
 
     LogToGame("HW->door_moving->[%d],[%f],[%f],[%f],[%f],[%f],[%f],[%d],[%f],[%f],[%f]",
-        player,
+        GetEventInt(event, "userid"),
         playerCoords[0],
         playerCoords[1],
         playerCoords[2],
@@ -995,7 +1027,7 @@ public Action:Handle_match_end_conditions(Handle:event, const String:eventName[]
 
 public Action:Handle_round_mvp(Handle:event, const String:eventName[], bool:dontBroadcast) {
     LogToGame("HW->round_mvp->[%d],[%d]",
-        GetClientOfUserId(GetEventInt(event, "userid")),
+        GetEventInt(event, "userid"),
         GetEventInt(event, "reason")
     );
     return Plugin_Handled;
@@ -1013,11 +1045,11 @@ public Action:Handle_switch_team(Handle:event, const String:eventName[], bool:do
 }
 
 public Action:Handle_bot_takeover(Handle:event, const String:eventName[], bool:dontBroadcast) {
+    // TODO: get coordinates
     LogToGame("HW->bot_takeover->[%d],[%d],[%d]",
-        GetClientOfUserId(GetEventInt(event, "userid")),
+        GetEventInt(event, "userid"),
         GetEventInt(event, "botid"),
         GetEventInt(event, "index")
     );
     return Plugin_Handled;
 }
-
