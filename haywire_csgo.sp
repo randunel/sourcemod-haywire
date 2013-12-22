@@ -118,10 +118,7 @@ public Action:HandleSimpleEvent(Handle:event, const String:eventName[], bool:don
 }
 
 public Action:HandleSimpleUserid(Handle:event, const String:eventName[], bool:dontBroadcast) {
-    new player = GetEventInt(event, "userid");
-    if(!IsClientInGame(player)) {
-        return Plugin_Handled;
-    }
+    new player = GetClientOfUserId(GetEventInt(event, "userid"));
 
     new Float:playerCoords[3];
     GetClientAbsOrigin(player, Float:playerCoords);
@@ -151,7 +148,7 @@ public Action:HandleSimpleEntity(Handle:event, const String:eventName[], bool:do
 }
 
 public Action:HandleUserEntity(Handle:event, const String:eventName[], bool:dontBroadcast) {
-    new player = GetEventInt(event, "userid");
+    new player = GetClientOfUserId(GetEventInt(event, "userid"));
     new entity = GetEventInt(event, "entityid");
 
     new Float:playerCoords[3];
@@ -199,7 +196,7 @@ public Action:Handle_player_connect(Handle:event, const String:eventName[], bool
     GetEventString(event, "address", address, sizeof(address));
     LogToGame("HW->player_connect->[%d],[%d],[%s],[%s],[%b],[%s",
         GetEventInt(event, "index"),
-        GetEventInt(event, "userid"),
+        GetClientOfUserId(GetEventInt(event, "userid")),
         sId, // BOT for bots
         address, // [none] for bots
         GetEventBool(event, "bot"), // 1 / 0
@@ -216,7 +213,7 @@ public Action:Handle_player_info(Handle:event, const String:eventName[], bool:do
     LogToGame("HW->player_info->[%s],[%d],[%d],[%s],[%b]",
         pName,
         GetEventInt(event, "index"),
-        GetEventInt(event, "userid"),
+        GetClientOfUserId(GetEventInt(event, "userid")),
         sId,
         GetEventBool(event, "bot")
     );
@@ -226,14 +223,11 @@ public Action:Handle_player_info(Handle:event, const String:eventName[], bool:do
 public Action:Handle_player_disconnect(Handle:event, const String:eventName[], bool:dontBroadcast) {
     new String:reason[MAX_MESSAGE_LENGTH];
     GetEventString(event, "reason", reason, sizeof(reason));
-    new String:name[MAX_NAME_LENGTH];
-    GetEventString(event, "name", name, sizeof(name));
     new String:sId[MAX_STEAMID_LENGTH];
     GetEventString(event, "networkid", sId, sizeof(sId));
-    LogToGame("HW->player_disconnect->[%d],[%s],[%s],[%s],[%d]",
-        GetEventInt(event, "userid"),
+    LogToGame("HW->player_disconnect->[%d],[%s],[%s],[%d]",
+        GetClientOfUserId(GetEventInt(event, "userid")),
         reason,
-        name,
         sId,
         GetEventInt(event, "bot")
     );
@@ -242,7 +236,7 @@ public Action:Handle_player_disconnect(Handle:event, const String:eventName[], b
 
 public Action:Handle_player_activate(Handle:event, const String:eventName[], bool:dontBroadcast) {
     LogToGame("HW->player_activate->[%d]",
-        GetEventInt(event, "userid")
+        GetClientOfUserId(GetEventInt(event, "userid"))
     );
     return Plugin_Handled;
 }
@@ -251,7 +245,7 @@ public Action:Handle_player_say(Handle:event, const String:eventName[], bool:don
     new String:message[MAX_MESSAGE_LENGTH];
     GetEventString(event, "text", message, sizeof(message));
     LogToGame("HW->player_say->[%d],[%s]",
-        GetEventInt(event, "userid"),
+        GetClientOfUserId(GetEventInt(event, "userid")),
         message
     );
     return Plugin_Handled;
@@ -259,7 +253,7 @@ public Action:Handle_player_say(Handle:event, const String:eventName[], bool:don
 
 public Action:Handle_player_team(Handle:event, const String:eventName[], bool:dontBroadcast) {
     LogToGame("HW->player_team->[%d],[%d],[%d],[%d]",
-        GetEventInt(event, "userid"),
+        GetClientOfUserId(GetEventInt(event, "userid")),
         GetEventInt(event, "team"),
         GetEventInt(event, "oldteam"),
         GetEventBool(event, "disconnect")
@@ -288,7 +282,7 @@ public Action:Handle_game_end(Handle:event, const String:eventName[], bool:dontB
 public Action:Handle_break_breakable(Handle:event, const String:eventName[], bool:dontBroadcast) {
     LogToGame("HW->break_breakable->[%d],[%d],[%d]",
         GetEventInt(event, "entindex"),
-        GetEventInt(event, "userid"),
+        GetClientOfUserId(GetEventInt(event, "userid")),
         GetEventInt(event, "material")
     );
     return Plugin_Handled;
@@ -297,7 +291,7 @@ public Action:Handle_break_breakable(Handle:event, const String:eventName[], boo
 public Action:Handle_break_prop(Handle:event, const String:eventName[], bool:dontBroadcast) {
     LogToGame("HW->break_prop->[%d],[%d]",
         GetEventInt(event, "entindex"),
-        GetEventInt(event, "userid")
+        GetClientOfUserId(GetEventInt(event, "userid"))
     );
     return Plugin_Handled;
 }
@@ -305,8 +299,8 @@ public Action:Handle_break_prop(Handle:event, const String:eventName[], bool:don
 // CSGO specific
 
 public Action:Handle_player_death(Handle:event, const String:eventName[], bool:dontBroadcast) {
-    new victim = GetEventInt(event, "userid");
-    new killer = GetEventInt(event, "attacker");
+    new victim = GetClientOfUserId(GetEventInt(event, "userid"));
+    new killer = GetClientOfUserId(GetEventInt(event, "attacker"));
 
     new Float:victimCoords[3];
     GetClientAbsOrigin(victim, Float:victimCoords);
@@ -347,8 +341,11 @@ public Action:Handle_player_death(Handle:event, const String:eventName[], bool:d
 }
 
 public Action:Handle_player_hurt(Handle:event, const String:eventName[], bool:dontBroadcast) {
-    new victim = GetEventInt(event, "userid");
-    new attacker = GetEventInt(event, "attacker");
+    new victim = GetClientOfUserId(GetEventInt(event, "userid"));
+    new attacker = GetClientOfUserId(GetEventInt(event, "attacker"));
+    if(attacker == 0) {
+        return Plugin_Handled;
+    }
 
     new Float:victimCoords[3];
     GetClientAbsOrigin(victim, Float:victimCoords);
@@ -389,10 +386,7 @@ public Action:Handle_player_hurt(Handle:event, const String:eventName[], bool:do
 }
 
 public Action:Handle_item_purchase(Handle:event, const String:eventName[], bool:dontBroadcast) {
-    new player = GetEventInt(event, "userid");
-    if(!IsClientInGame(player)) {
-        return Plugin_Handled;
-    }
+    new player = GetClientOfUserId(GetEventInt(event, "userid"));
 
     new Float:playerCoords[3];
     GetClientAbsOrigin(player, Float:playerCoords);
@@ -417,7 +411,7 @@ public Action:Handle_item_purchase(Handle:event, const String:eventName[], bool:
 }
 
 public Action:Handle_bomb_beginplant(Handle:event, const String:eventName[], bool:dontBroadcast) {
-    new player = GetEventInt(event, "userid");
+    new player = GetClientOfUserId(GetEventInt(event, "userid"));
 
     new Float:playerCoords[3];
     GetClientAbsOrigin(player, Float:playerCoords);
@@ -438,7 +432,7 @@ public Action:Handle_bomb_beginplant(Handle:event, const String:eventName[], boo
 }
 
 public Action:Handle_bomb_abortplant(Handle:event, const String:eventName[], bool:dontBroadcast) {
-    new player = GetEventInt(event, "userid");
+    new player = GetClientOfUserId(GetEventInt(event, "userid"));
 
     new Float:playerCoords[3];
     GetClientAbsOrigin(player, Float:playerCoords);
@@ -459,7 +453,7 @@ public Action:Handle_bomb_abortplant(Handle:event, const String:eventName[], boo
 }
 
 public Action:Handle_bomb_planted(Handle:event, const String:eventName[], bool:dontBroadcast) {
-    new player = GetEventInt(event, "userid");
+    new player = GetClientOfUserId(GetEventInt(event, "userid"));
 
     new Float:playerCoords[3];
     GetClientAbsOrigin(player, Float:playerCoords);
@@ -480,7 +474,7 @@ public Action:Handle_bomb_planted(Handle:event, const String:eventName[], bool:d
 }
 
 public Action:Handle_bomb_defused(Handle:event, const String:eventName[], bool:dontBroadcast) {
-    new player = GetEventInt(event, "userid");
+    new player = GetClientOfUserId(GetEventInt(event, "userid"));
 
     new Float:playerCoords[3];
     GetClientAbsOrigin(player, Float:playerCoords);
@@ -502,14 +496,14 @@ public Action:Handle_bomb_defused(Handle:event, const String:eventName[], bool:d
 
 public Action:Handle_bomb_exploded(Handle:event, const String:eventName[], bool:dontBroadcast) {
     LogToGame("HW->bomb_exploded->[%d],[%d]",
-        GetEventInt(event, "userid"),
+        GetClientOfUserId(GetEventInt(event, "userid")),
         GetEventInt(event, "site")
     );
     return Plugin_Handled;
 }
 
 public Action:Handle_bomb_dropped(Handle:event, const String:eventName[], bool:dontBroadcast) {
-    new player = GetEventInt(event, "userid");
+    new player = GetClientOfUserId(GetEventInt(event, "userid"));
 
     new Float:playerCoords[3];
     GetClientAbsOrigin(player, Float:playerCoords);
@@ -553,7 +547,7 @@ public Action:Handle_defuser_dropped(Handle:event, const String:eventName[], boo
 }
 
 public Action:Handle_defuser_pickup(Handle:event, const String:eventName[], bool:dontBroadcast) {
-    new player = GetEventInt(event, "userid");
+    new player = GetClientOfUserId(GetEventInt(event, "userid"));
 
     new Float:playerCoords[3];
     GetClientAbsOrigin(player, Float:playerCoords);
@@ -574,7 +568,7 @@ public Action:Handle_defuser_pickup(Handle:event, const String:eventName[], bool
 }
 
 public Action:Handle_bomb_begindefuse(Handle:event, const String:eventName[], bool:dontBroadcast) {
-    new player = GetEventInt(event, "userid");
+    new player = GetClientOfUserId(GetEventInt(event, "userid"));
 
     new Float:playerCoords[3];
     GetClientAbsOrigin(player, Float:playerCoords);
@@ -595,7 +589,7 @@ public Action:Handle_bomb_begindefuse(Handle:event, const String:eventName[], bo
 }
 
 public Action:Handle_bomb_abortdefuse(Handle:event, const String:eventName[], bool:dontBroadcast) {
-    new player = GetEventInt(event, "userid");
+    new player = GetClientOfUserId(GetEventInt(event, "userid"));
 
     new Float:playerCoords[3];
     GetClientAbsOrigin(player, Float:playerCoords);
@@ -615,7 +609,7 @@ public Action:Handle_bomb_abortdefuse(Handle:event, const String:eventName[], bo
 }
 
 public Action:Handle_player_radio(Handle:event, const String:eventName[], bool:dontBroadcast) {
-    new player = GetEventInt(event, "userid");
+    new player = GetClientOfUserId(GetEventInt(event, "userid"));
 
     new Float:playerCoords[3];
     GetClientAbsOrigin(player, Float:playerCoords);
@@ -651,7 +645,7 @@ public Action:Handle_bomb_beep(Handle:event, const String:eventName[], bool:dont
 }
 
 public Action:Handle_weapon_fire(Handle:event, const String:eventName[], bool:dontBroadcast) {
-    new player = GetEventInt(event, "userid");
+    new player = GetClientOfUserId(GetEventInt(event, "userid"));
 
     new Float:playerCoords[3];
     GetClientAbsOrigin(player, Float:playerCoords);
@@ -676,7 +670,7 @@ public Action:Handle_weapon_fire(Handle:event, const String:eventName[], bool:do
 }
 
 public Action:Handle_weapon_fire_on_empty(Handle:event, const String:eventName[], bool:dontBroadcast) {
-    new player = GetEventInt(event, "userid");
+    new player = GetClientOfUserId(GetEventInt(event, "userid"));
 
     new Float:playerCoords[3];
     GetClientAbsOrigin(player, Float:playerCoords);
@@ -700,10 +694,7 @@ public Action:Handle_weapon_fire_on_empty(Handle:event, const String:eventName[]
 }
 
 public Action:Handle_item_pickup(Handle:event, const String:eventName[], bool:dontBroadcast) {
-    new player = GetEventInt(event, "userid");
-    if(!IsClientInGame(player)) {
-        return Plugin_Handled;
-    }
+    new player = GetClientOfUserId(GetEventInt(event, "userid"));
 
     new Float:playerCoords[3];
     GetClientAbsOrigin(player, Float:playerCoords);
@@ -727,7 +718,7 @@ public Action:Handle_item_pickup(Handle:event, const String:eventName[], bool:do
 }
 
 public Action:Handle_ammo_pickup(Handle:event, const String:eventName[], bool:dontBroadcast) {
-    new player = GetEventInt(event, "userid");
+    new player = GetClientOfUserId(GetEventInt(event, "userid"));
 
     new Float:playerCoords[3];
     GetClientAbsOrigin(player, Float:playerCoords);
@@ -752,10 +743,7 @@ public Action:Handle_ammo_pickup(Handle:event, const String:eventName[], bool:do
 }
 
 public Action:Handle_item_equip(Handle:event, const String:eventName[], bool:dontBroadcast) {
-    new player = GetEventInt(event, "userid");
-    if(!IsClientInGame(player)) {
-        return Plugin_Handled;
-    }
+    new player = GetClientOfUserId(GetEventInt(event, "userid"));
 
     new Float:playerCoords[3];
     GetClientAbsOrigin(player, Float:playerCoords);
@@ -784,10 +772,7 @@ public Action:Handle_item_equip(Handle:event, const String:eventName[], bool:don
 }
 
 public Action:Handle_enter_buyzone(Handle:event, const String:eventName[], bool:dontBroadcast) {
-    new player = GetEventInt(event, "userid");
-    if(!IsClientInGame(player)) {
-        return Plugin_Handled;
-    }
+    new player = GetClientOfUserId(GetEventInt(event, "userid"));
 
     new Float:playerCoords[3];
     GetClientAbsOrigin(player, Float:playerCoords);
@@ -808,10 +793,7 @@ public Action:Handle_enter_buyzone(Handle:event, const String:eventName[], bool:
 }
 
 public Action:Handle_exit_buyzone(Handle:event, const String:eventName[], bool:dontBroadcast) {
-    new player = GetEventInt(event, "userid");
-    if(!IsClientInGame(player)) {
-        return Plugin_Handled;
-    }
+    new player = GetClientOfUserId(GetEventInt(event, "userid"));
 
     new Float:playerCoords[3];
     GetClientAbsOrigin(player, Float:playerCoords);
@@ -832,7 +814,7 @@ public Action:Handle_exit_buyzone(Handle:event, const String:eventName[], bool:d
 }
 
 public Action:Handle_enter_bombzone(Handle:event, const String:eventName[], bool:dontBroadcast) {
-    new player = GetEventInt(event, "userid");
+    new player = GetClientOfUserId(GetEventInt(event, "userid"));
 
     new Float:playerCoords[3];
     GetClientAbsOrigin(player, Float:playerCoords);
@@ -854,7 +836,7 @@ public Action:Handle_enter_bombzone(Handle:event, const String:eventName[], bool
 }
 
 public Action:Handle_exit_bombzone(Handle:event, const String:eventName[], bool:dontBroadcast) {
-    new player = GetEventInt(event, "userid");
+    new player = GetClientOfUserId(GetEventInt(event, "userid"));
 
     new Float:playerCoords[3];
     GetClientAbsOrigin(player, Float:playerCoords);
@@ -900,7 +882,7 @@ public Action:Handle_round_end(Handle:event, const String:eventName[], bool:dont
 }
 
 public Action:Handle_bullet_impact(Handle:event, const String:eventName[], bool:dontBroadcast) {
-    new player = GetEventInt(event, "userid");
+    new player = GetClientOfUserId(GetEventInt(event, "userid"));
 
     new Float:playerCoords[3];
     GetClientAbsOrigin(player, Float:playerCoords);
@@ -923,7 +905,7 @@ public Action:Handle_bullet_impact(Handle:event, const String:eventName[], bool:
 }
 
 public Action:Handle_player_falldamage(Handle:event, const String:eventName[], bool:dontBroadcast) {
-    new player = GetEventInt(event, "userid");
+    new player = GetClientOfUserId(GetEventInt(event, "userid"));
 
     new Float:playerCoords[3];
     GetClientAbsOrigin(player, Float:playerCoords);
@@ -944,7 +926,7 @@ public Action:Handle_player_falldamage(Handle:event, const String:eventName[], b
 }
 
 public Action:Handle_door_moving(Handle:event, const String:eventName[], bool:dontBroadcast) {
-    new player = GetEventInt(event, "userid");
+    new player = GetClientOfUserId(GetEventInt(event, "userid"));
     new entity = GetEventInt(event, "entindex");
 
     new Float:playerCoords[3];
@@ -1013,7 +995,7 @@ public Action:Handle_match_end_conditions(Handle:event, const String:eventName[]
 
 public Action:Handle_round_mvp(Handle:event, const String:eventName[], bool:dontBroadcast) {
     LogToGame("HW->round_mvp->[%d],[%d]",
-        GetEventInt(event, "userid"),
+        GetClientOfUserId(GetEventInt(event, "userid")),
         GetEventInt(event, "reason")
     );
     return Plugin_Handled;
@@ -1032,7 +1014,7 @@ public Action:Handle_switch_team(Handle:event, const String:eventName[], bool:do
 
 public Action:Handle_bot_takeover(Handle:event, const String:eventName[], bool:dontBroadcast) {
     LogToGame("HW->bot_takeover->[%d],[%d],[%d]",
-        GetEventInt(event, "userid"),
+        GetClientOfUserId(GetEventInt(event, "userid")),
         GetEventInt(event, "botid"),
         GetEventInt(event, "index")
     );
